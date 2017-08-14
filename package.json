@@ -2,11 +2,9 @@
  "name": "mmm-dropboxgallery",
  "version": "1.0.0",
  "description": "MagicMirror module for showing images from Dropbox.",
- "main": "index.js",
  "author": "eouia",
  "license": "MIT",
  "dependencies": {
-  "dropbox": "^2.5.7",
-  "piexifjs": "^1.0.3"
+  "dropbox": "^2.5.7"
  }
 }
