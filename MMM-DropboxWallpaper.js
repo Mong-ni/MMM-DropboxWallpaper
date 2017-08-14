@@ -196,9 +196,11 @@ Module.register("MMM-DropboxWallpaper",{
 		photo.appendChild(infoWrapper)
 
     wrapper.insertBefore(photo, wrapper.firstChild)
-    if (wrapper.childNodes.length > 2) {
-      wrapper.removeChild(wrapper.lastChild)
-    }
+    var timer = setTimeout(function(){
+      while (wrapper.childNodes.length > 1) {
+        wrapper.removeChild(wrapper.lastChild)
+      }
+    }, 2000)
   },
 
 
