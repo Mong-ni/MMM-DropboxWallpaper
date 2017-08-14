@@ -115,6 +115,7 @@ module.exports = NodeHelper.create({
                 self.dbxImageList.push(img)
               })
             }
+            response = null
           })
         .then(function() { //after getting list of all images
           if(self.dbxImageList.length > 0) {
@@ -142,7 +143,7 @@ module.exports = NodeHelper.create({
             firstScanDirectories--;
           }
         })
-
+      dbx = null
     }
   },
 
@@ -175,6 +176,7 @@ module.exports = NodeHelper.create({
           } else {
             self.imageCursor = 0
           }
+          data = null
           self.sendSocketNotification('PHOTO_DOWNLOADED', img)
           console.log("[DBXWLP] Photo is downloaded.", img.path)
         })
@@ -182,9 +184,11 @@ module.exports = NodeHelper.create({
           self.sendSocketNotification('DOWNLOAD_ERROR', img.path)
           console.log('[DBXWLP] DOWNLOAD_ERROR', img.path, error)
         })
+
     } else {
       console.log("[DBXWLP] Nothing to prepare")
     }
+    dbx = null
   },
 
 

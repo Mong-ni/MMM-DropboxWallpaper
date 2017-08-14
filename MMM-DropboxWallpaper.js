@@ -24,9 +24,8 @@ const PROFILE_TEMPLATE = {
 	directories: [],
 	scanIntervalSec: 30*60,
 	sort: "byRandom",
-	drawIntervalSec: 10, //minimum 10
+	drawIntervalSec: 60, //minimum 10
 	mode:'hybrid',
-	showInfo: 1,
 	dateTimeFormat: "YYYY MMMM Do, HH:mm",
 }
 
