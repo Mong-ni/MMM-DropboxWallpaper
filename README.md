@@ -1,5 +1,5 @@
 # MMM-DropboxWallpaper
-Module for `MagicMirror` which can show image from `Dropbox`
+Module for `MagicMirror` which can show images from `Dropbox`
 
 ## Screenshot
 ![](https://github.com/eouia/MMM-DropboxWallpaper/blob/master/sc.jpg?raw=true)
