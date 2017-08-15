@@ -2,6 +2,7 @@ var Dropbox = require('dropbox')
 var path = require('path')
 var fs = require('fs')
 var moment = require('moment')
+const {session} = require('electron')
 //var piexif = require("piexifjs");
 
 const STORE = path.join(__dirname, 'cache')
@@ -189,6 +190,9 @@ module.exports = NodeHelper.create({
       console.log("[DBXWLP] Nothing to prepare")
     }
     dbx = null
+    session.clearCache(function() {
+      console.log("cleared?")
+    })
   },
 
 

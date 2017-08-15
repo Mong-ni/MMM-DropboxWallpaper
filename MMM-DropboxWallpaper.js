@@ -1,5 +1,5 @@
 /* Magic Mirror
-* Module: MMM-DropboxPictures
+* Module: MMM-DropboxWallpaper
 *
 * By eouia
 */
@@ -20,48 +20,48 @@ function loadJSON(path, success, error) {
 }
 
 const PROFILE_TEMPLATE = {
-	accessToken: "",
-	directories: [],
-	scanIntervalSec: 30*60,
-	sort: "byRandom",
-	drawIntervalSec: 60, //minimum 10
-	mode:'hybrid',
-	dateTimeFormat: "YYYY MMMM Do, HH:mm",
+  accessToken: "",
+  directories: [],
+  scanIntervalSec: 30*60,
+  sort: "byRandom",
+  drawIntervalSec: 60, //minimum 10
+  mode:'hybrid',
+  dateTimeFormat: "YYYY MMMM Do, HH:mm",
 }
 
 
 
 Module.register("MMM-DropboxWallpaper",{
-	defaults: {
-		startProfile: "default",
-		tokenLocationIQ : "",
-		profiles: {
-			"default": {},
-		},
-	},
+  defaults: {
+    startProfile: "default",
+    tokenLocationIQ : "",
+    profiles: {
+      "default": {},
+    },
+  },
 
-	getScripts: function() {
-		return ["moment.js"]
-	},
+  getScripts: function() {
+    return ["moment.js"]
+  },
 
-	getStyles: function() {
-		return ["MMM-DropboxWallpaper.css"]
-	},
+  getStyles: function() {
+    return ["MMM-DropboxWallpaper.css"]
+  },
 
-	start: function() {
-		this.CurCfg = {}
-		this.curImg
-		var profileConfig = {}
+  start: function() {
+    this.CurCfg = {}
+    this.curImg
+    var profileConfig = {}
 
-		if (!this.config.startProfile) this.config.startProfile = 'default'
-		if (typeof this.config.profiles[this.config.startProfile] == 'undefined') {
-			profileConfig = this.defaults.profiles[this.config.startProfile]
-		} else {
-			profileConfig = this.config.profiles[this.config.startProfile]
-		}
-		this.loadConfig(profileConfig)
+    if (!this.config.startProfile) this.config.startProfile = 'default'
+    if (typeof this.config.profiles[this.config.startProfile] == 'undefined') {
+      profileConfig = this.defaults.profiles[this.config.startProfile]
+    } else {
+      profileConfig = this.config.profiles[this.config.startProfile]
+    }
+    this.loadConfig(profileConfig)
 
-	},
+  },
 
   suspend: function() {
     this.sendSocketNotification('SUSPEND')
@@ -71,12 +71,12 @@ Module.register("MMM-DropboxWallpaper",{
     this.sendSocketNotification('RESUME', this.CurCfg)
   },
 
-	getDom: function() {
-		var wrapper = document.createElement("div")
-		wrapper.className = "DBXWLP"
+  getDom: function() {
+    var wrapper = document.createElement("div")
+    wrapper.className = "DBXWLP"
     wrapper.id = "DBXWLP_WRAPPER"
     return wrapper
-	},
+  },
 
   notificationReceived(noti, payload) {
     switch (noti) {
@@ -91,14 +91,14 @@ Module.register("MMM-DropboxWallpaper",{
     }
   },
 
-	socketNotificationReceived(noti, payload) {
-		switch(noti) {
-			case 'PHOTO_DOWNLOADED':
-				this.curImg = payload;
-				this.updateView()
-				break;
-		}
-	},
+  socketNotificationReceived(noti, payload) {
+    switch(noti) {
+      case 'PHOTO_DOWNLOADED':
+        this.curImg = payload;
+        this.updateView()
+        break;
+    }
+  },
 
   updateView: function() {
     var wrapper = document.getElementById("DBXWLP_WRAPPER")
@@ -111,9 +111,9 @@ Module.register("MMM-DropboxWallpaper",{
 
     var photo = document.createElement("div")
     photo.style.backgroundImage
-			= "url('modules/MMM-DropboxWallpaper/cache/cached?"
-			+ this.curImg.name
-			+ "')"
+      = "url('modules/MMM-DropboxWallpaper/cache/cached?"
+      + this.curImg.name
+      + "')"
 
     if (this.CurCfg.mode == 'hybrid') {
       var imgRatio = (
@@ -134,21 +134,21 @@ Module.register("MMM-DropboxWallpaper",{
     var locationWrapper = document.createElement("div")
     locationWrapper.className = "location"
 
-		if (typeof this.curImg.time !== 'undefined') {
-  		dateWrapper.innerHTML = moment(this.curImg.time).format(this.CurCfg.dateTimeFormat)
+    if (typeof this.curImg.time !== 'undefined') {
+      dateWrapper.innerHTML = moment(this.curImg.time).format(this.CurCfg.dateTimeFormat)
     }
 
-		if (typeof this.curImg.metadata.location !== 'undefined') {
+    if (typeof this.curImg.metadata.location !== 'undefined') {
       if (
-  			typeof this.curImg.metadata.location.latitude !== 'undefined'
-  			&& typeof this.curImg.metadata.location.longitude !== 'undefined'
-  		) {
-    		if (this.config.tokenLocationIQ !== '') {
-    			var query = "http://locationiq.org/v1/reverse.php?format=json&key="
-    				+ this.config.tokenLocationIQ
-    				+ "&lat=" + this.curImg.metadata.location.latitude
-    				+ "&lon=" + this.curImg.metadata.location.longitude
-    			loadJSON(query, function(data){
+        typeof this.curImg.metadata.location.latitude !== 'undefined'
+        && typeof this.curImg.metadata.location.longitude !== 'undefined'
+      ) {
+        if (this.config.tokenLocationIQ !== '') {
+          var query = "http://locationiq.org/v1/reverse.php?format=json&key="
+            + this.config.tokenLocationIQ
+            + "&lat=" + this.curImg.metadata.location.latitude
+            + "&lon=" + this.curImg.metadata.location.longitude
+          loadJSON(query, function(data){
             var loc = ""
             var part = ""
 
@@ -186,14 +186,14 @@ Module.register("MMM-DropboxWallpaper",{
             loc += ((part) ? (part + ", ") : "")
 
             loc += data.address.country_code.toUpperCase()
-    				locationWrapper.innerHTML = loc
-    			}, function(err) {console.log(err)})
-    		}
+            locationWrapper.innerHTML = loc
+          }, function(err) {console.log(err)})
+        }
       }
-		}
+    }
     infoWrapper.appendChild(dateWrapper)
-		infoWrapper.appendChild(locationWrapper)
-		photo.appendChild(infoWrapper)
+    infoWrapper.appendChild(locationWrapper)
+    photo.appendChild(infoWrapper)
 
     wrapper.insertBefore(photo, wrapper.firstChild)
     var timer = setTimeout(function(){
@@ -204,17 +204,17 @@ Module.register("MMM-DropboxWallpaper",{
   },
 
 
-	loadConfig: function(cfg) {
-		this.CurCfg = Object.assign({}, PROFILE_TEMPLATE, cfg)
+  loadConfig: function(cfg) {
+    this.CurCfg = Object.assign({}, PROFILE_TEMPLATE, cfg)
 
-		if (this.CurCfg.scanIntervalSec < 60) this.CurCfg.scanIntervalSec = 60
-		if (this.CurCfg.drawIntervalSec < 10) this.CurCfg.drawIntervalSec = 10
-		if (this.CurCfg.drawIntervalSec > this.CurCfg.scanIntervalSec) {
-			this.CurCfg.drawIntervalSec = this.CurCfg.scanIntervalSec
-		}
-		if (!this.CurCfg.sort.match(/byTime|byTimeReverse|byName|byNameReverse|byRandom/gi)) {
-			this.CurCfg.sort = 'byRandom'
-		}
-		this.sendSocketNotification('INIT_CONFIG', this.CurCfg)
-	},
+    if (this.CurCfg.scanIntervalSec < 60) this.CurCfg.scanIntervalSec = 60
+    if (this.CurCfg.drawIntervalSec < 10) this.CurCfg.drawIntervalSec = 10
+    if (this.CurCfg.drawIntervalSec > this.CurCfg.scanIntervalSec) {
+      this.CurCfg.drawIntervalSec = this.CurCfg.scanIntervalSec
+    }
+    if (!this.CurCfg.sort.match(/byTime|byTimeReverse|byName|byNameReverse|byRandom/gi)) {
+      this.CurCfg.sort = 'byRandom'
+    }
+    this.sendSocketNotification('INIT_CONFIG', this.CurCfg)
+  },
 })

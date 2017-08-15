@@ -24,8 +24,8 @@
 
 .DBXWLP .info {
   position:fixed;
-  font-size:75%;
-  color:#FFF;
+  font-size:60%;
+  color:#CCC;
 
   /* You can adjust position by top|bottom, left|right.
   /*
@@ -35,7 +35,7 @@
   bottom:10px;
   right:10px;
 
-  background-color:rgba(0,0,0,0.5);
+  background-color:rgba(0,0,0,0.3);
   border-radius:10px;
   padding:10px;
 
