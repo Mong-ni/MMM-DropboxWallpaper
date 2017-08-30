@@ -117,12 +117,12 @@ profiles: {
 
 #### about `.mode`
 You can get information about `cover` and `contain` in here : https://css-tricks.com/almanac/properties/b/background-size/#article-header-id-0
-Both of mode have some demerits.
+Both have some demerits.
 - `cover` tells the browser to make sure the image **always covers the entire container**, even if it has to stretch the image or cut a little bit off one of the edges. 
 - `contain`, on the other hand, says to **always show the whole image**, even if that leaves a little space to the sides or bottom.
 - `hybrid` : By the ratio of W/H of photo and comparing with those of screen, this option could change mode automatically between 'cover' and 'contain'. 
 
 Suppose your `MM` has a horizontal screen. 
-- If your photo is also horizontal, `'cover'` is good option. This vertical photo with `cover` could be shown pretty on entire screen. You can see most area of photo. Meaning of this photo would not be lost.<br>
+- If your photo is also horizontal, `'cover'` is good option. This horizontal photo with `cover` could be shown pretty on entire screen. You can see most area of photo. Meaning of this photo would not be lost.<br>
 - If your photo is vertical, `'contain'` is good for this case. Of course, you can see the black areas in left and right sides of your photo. But with `'cover'`, this photo would show only small part of image - like just close-up of someone's nose holes. What is this??
 
