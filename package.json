@@ -5,6 +5,8 @@
  "author": "eouia",
  "license": "MIT",
  "dependencies": {
-  "dropbox": "^2.5.7"
+  "dropbox": "^4.0.9",
+  "exif": "^0.6.0",
+  "isomorphic-fetch": "^2.2.1",
  }
 }
