@@ -1,52 +1,67 @@
-.module {
-  background-color:rgba(0,0,0,0.2);
-  border-radius:5px;
-
-}
-
-.DBXWLP {
-  height:100vh;
-  width:100%;
-}
-
-.DBXWLP .photo {
-  width:100%;
-  height:100%;
-  background-position:center;
-  background-color:#000;
+#DBXWLP {
   background-repeat:no-repeat;
-  position:fixed;
-  top:0px;
-  left:0px;
+  background-position:center;
 
+  opacity:100%;
+  /*transition: background-image 1s ease 1s;*/
+  transition: opacity 1s ease 1s;
+}
+
+.region.fullscreen #DBXWLP {
+  position:absolute;
+  top:0;
+  left:0;
 }
 
 
-.DBXWLP .info {
-  position:fixed;
-  font-size:60%;
-  color:#CCC;
 
-  /* You can adjust position by top|bottom, left|right.
-  /*
-  top: 10px;
-  left:10px;
-  */
-  bottom:10px;
+
+#DBXWLP_INFO {
+  position:absolute;
+  bottom:40px;
   right:10px;
-
-  background-color:rgba(0,0,0,0.3);
-  border-radius:10px;
   padding:10px;
+  border-radius:5px;
+  background-color:rgba(0,0,0,0.5);
+  color:rgba(255,255,255, 0.5);
+  font-size:16px;
+  line-height:110%;
+}
+
+#DBXWLP.fo {
+  opacity:0;
+  transition: opacity 1s ease 1s;
+}
+/*
+#DBXWLP.tr_1 {
 
 }
 
-.DBXWLP .disappear {
-  transition: opacity 2s 0s ease;
-  opacity:0
+#DBXWLP.tr_2 {
+  transform: rotateY(180deg);
 }
 
-.DBXWLP .appear {
-  transition: opacity 4s 2s ease;
-  opacity:1;
+#DBXWLP.tr_3 {
+  transform:rotate(180deg);
 }
+
+#DBXWLP.tr_4 {
+  transform: rotateX(180deg) ;
+}
+
+#DBXWLP.tr_5 {
+  transform: rotate(270deg) rotateY(180deg);
+}
+
+#DBXWLP.tr_6 {
+  transform:rotate(90deg);
+}
+
+#DBXWLP.tr_7 {
+  transform: rotateX(180deg) rotate(90deg);
+}
+
+#DBXWLP.tr_8 {
+  transform:rotate(270deg);
+}
+*/

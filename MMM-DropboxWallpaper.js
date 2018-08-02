@@ -1,47 +1,24 @@
 /* Magic Mirror
 * Module: MMM-DropboxWallpaper
+* v2.0.0
 *
 * By eouia
 */
 
-function loadJSON(path, success, error) {
-  var xhr = new XMLHttpRequest()
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE) {
-      if (xhr.status === 200) {
-        if (success) success(JSON.parse(xhr.responseText))
-      } else {
-        if (error) error(xhr)
-      }
-    }
-  }
-  xhr.open("GET", path, true)
-  xhr.send()
-}
-
-const PROFILE_TEMPLATE = {
-  accessToken: "",
-  directories: [],
-  scanIntervalSec: 30*60,
-  sort: "byRandom",
-  drawIntervalSec: 60, //minimum 10
-  mode:'hybrid',
-  dateTimeFormat: "YYYY MMMM Do, HH:mm",
-}
-
-
 
 Module.register("MMM-DropboxWallpaper",{
   defaults: {
-    startProfile: "default",
-    tokenLocationIQ : "",
-    profiles: {
-      "default": {},
-    },
-  },
 
-  getScripts: function() {
-    return ["moment.js"]
+    refreshInterval: 1000*60,
+    search: [".jpg", ".png", ".gif"], // Or you can find target files like "FILENAME". (wildcard or regexp not supported)
+    directory: "/", // root of directories to be scanned.
+    sort: "random", //"time09", "time90", "nameAZ", "nameZA""random"
+    tokenLocationIQ : "", // See http://locationiq.org/#register
+    dropboxAccessToken: "",
+    width: "100%", // 'px' or '%' or valid value for CSS dimensions units.
+    height: "100%",
+    mode: "cover", // 'cover', 'contain', 'hybrid' or any other values for CSS `background-size`
+    dateTimeFormat: "HH:mm MMM Do, YYYY", // See. moment.js .format()
   },
 
   getStyles: function() {
@@ -49,172 +26,110 @@ Module.register("MMM-DropboxWallpaper",{
   },
 
   start: function() {
-    this.CurCfg = {}
-    this.curImg
-    var profileConfig = {}
-
-    if (!this.config.startProfile) this.config.startProfile = 'default'
-    if (typeof this.config.profiles[this.config.startProfile] == 'undefined') {
-      profileConfig = this.defaults.profiles[this.config.startProfile]
-    } else {
-      profileConfig = this.config.profiles[this.config.startProfile]
-    }
-    this.loadConfig(profileConfig)
 
   },
 
-  suspend: function() {
-    this.sendSocketNotification('SUSPEND')
-  },
-
-  resume: function() {
-    this.sendSocketNotification('RESUME', this.CurCfg)
-  },
 
   getDom: function() {
     var wrapper = document.createElement("div")
-    wrapper.className = "DBXWLP"
-    wrapper.id = "DBXWLP_WRAPPER"
+    wrapper.id = "DBXWLP_CONTAINER"
+    wrapper.style.width = this.config.width
+		wrapper.style.height = this.config.height
+    var bg = document.createElement("div")
+    bg.id = "DBXWLP"
+    bg.style.width = this.config.width
+		bg.style.height = this.config.height
+
+    var info = document.createElement("div")
+    info.id = "DBXWLP_INFO"
+
+    var date = document.createElement("div")
+    date.id = "DBXWLP_DATE"
+
+    var location = document.createElement("div")
+    location.id = "DBXWLP_LOCATION"
+
+    info.appendChild(date)
+    info.appendChild(location)
+    wrapper.appendChild(bg)
+    wrapper.appendChild(info)
     return wrapper
   },
 
-  notificationReceived(noti, payload) {
-    switch (noti) {
-      case 'CHANGED_PROFILE':
-        if(this.config.startProfile !== payload.to) {
-          this.config.startProfile = payload.to
-          this.start()
-        }
-        break;
-      default:
-        break;
+  notificationReceived: function(noti, payload, sender) {
+    switch(noti) {
+      case "DOM_OBJECTS_CREATED":
+        this.sendSocketNotification('INIT_CONFIG', this.config)
+        break
     }
   },
 
   socketNotificationReceived(noti, payload) {
     switch(noti) {
-      case 'PHOTO_DOWNLOADED':
-        this.curImg = payload;
-        this.updateView()
+      case 'NEW_PHOTO':
+        this.updateView(payload)
         break;
     }
   },
 
-  updateView: function() {
-    var wrapper = document.getElementById("DBXWLP_WRAPPER")
+  updateView: function(photo) {
+    const tr = [
+      "",
+      "",
+      "rotateY(180deg)",
+      "rotate(180deg)",
+      "rotateX(180deg)",
+      "rotate(270deg) rotateY(180deg)",
+      "rotate(90deg)",
+      "rotateX(180deg) rotate(90deg)",
+      "rotate(270deg)",
+    ]
+    var wrapper = document.getElementById("DBXWLP")
+    wrapper.className += " fo"
+
     var wrpRatio = (wrapper.offsetHeight < wrapper.offsetWidth) ? 'h' : 'v'
+    //var height = photo.dimensions.height
+    //var width = photo.dimensions.width
 
-    if (!this.curImg) return
-    if (wrapper.firstChild) {
-      wrapper.firstChild.className = 'photo disappear'
+    var height = (photo.orientation > 4) ? photo.dimensions.width : photo.dimensions.height
+    var width = (photo.orientation > 4) ? photo.dimensions.height : photo.dimensions.width
+    var mode = this.config.mode
+    if (this.config.mode == 'hybrid') {
+      var imgRatio = ( height < width) ? 'h' : 'v'
+      mode = (imgRatio == wrpRatio) ? 'cover' : 'contain'
     }
+    wrapper.style.backgroundSize = this.config.mode
 
-    var photo = document.createElement("div")
-    photo.style.backgroundImage
-      = "url('modules/MMM-DropboxWallpaper/cache/cached?"
-      + this.curImg.name
-      + "')"
+    var timer = setTimeout(()=>{
+      wrapper.style.backgroundImage = "none"
+      wrapper.className = "tr_" + photo.orientation
 
-    if (this.CurCfg.mode == 'hybrid') {
-      var imgRatio = (
-        this.curImg.metadata.dimensions.height
-        < this.curImg.metadata.dimensions.width
-      ) ? 'h' : 'v'
-      photo.style.backgroundSize = (imgRatio == wrpRatio) ? 'cover' : 'contain'
-    } else {
-      photo.style.backgroundSize = this.CurCfg.mode
-    }
+      console.log(width, height, wrapper.offsetHeight, wrapper.offsetWidth)
 
-    photo.className = "photo appear"
+      //wrapper.style.backgroundSize = zoom + "%"
 
-    var infoWrapper = document.createElement("div")
-    infoWrapper.className = "info"
-    var dateWrapper = document.createElement("div")
-    dateWrapper.className = "time"
-    var locationWrapper = document.createElement("div")
-    locationWrapper.className = "location"
 
-    if (typeof this.curImg.time !== 'undefined') {
-      dateWrapper.innerHTML = moment(this.curImg.time).format(this.CurCfg.dateTimeFormat)
-    }
 
-    if (typeof this.curImg.metadata.location !== 'undefined') {
-      if (
-        typeof this.curImg.metadata.location.latitude !== 'undefined'
-        && typeof this.curImg.metadata.location.longitude !== 'undefined'
-      ) {
-        if (this.config.tokenLocationIQ !== '') {
-          var query = "http://locationiq.org/v1/reverse.php?format=json&key="
-            + this.config.tokenLocationIQ
-            + "&lat=" + this.curImg.metadata.location.latitude
-            + "&lon=" + this.curImg.metadata.location.longitude
-          loadJSON(query, function(data){
-            var loc = ""
-            var part = ""
+      wrapper.style.backgroundImage
+        = "url('modules/MMM-DropboxWallpaper/cache/temp?"
+        + Date.now()
+        + "')"
 
-            var level = [
-              'hotel', , 'pedestrian', 'stadium', 'university', 'public',
-              'manor', 'memorial', 'monument', 'ruins', 'tower', 'beach_resort',
-              'garden', 'marina', 'park', 'american_football', 'baseball',
-              'golf', 'multi', 'building', 'aquarium', 'artwork', 'attraction',
-              'museum', 'theme_park', 'viewpoint', 'zoo', 'castle', 'fort',
-              'gallery'
-            ]
-            level.forEach(function(s) {
-              if(typeof data.address[s] !== 'undefined') part = data.address[s]
-            })
-            loc += ((part) ? (part + ", ") : "")
 
-            part = ""
-            var level = [
-              'hamlet', 'isolated_dwelling', 'farm', 'allotments',
-              'plot', 'city_block', 'neighbourhood', 'quarter',
-              'suburb', 'borough', 'village', 'town', 'city'
-            ]
-            level.forEach(function(s) {
-              if(typeof data.address[s] !== 'undefined') part = data.address[s]
-            })
-            loc += ((part) ? (part + ", ") : "")
+      var zoom = Math.round(width * width / height / height * 100) / 100
+      var scale = ""
 
-            part = ""
-            var level = [
-              'state', 'region', 'province', 'district', 'county', 'municipality'
-            ]
-            level.forEach(function(s) {
-              if(typeof data.address[s] !== 'undefined') part = data.address[s]
-            })
-            loc += ((part) ? (part + ", ") : "")
-
-            loc += data.address.country_code.toUpperCase()
-            locationWrapper.innerHTML = loc
-          }, function(err) {console.log(err)})
-        }
+      if (mode == "cover") {
+        scale = (photo.orientation == 1) ? "" : " scale(" + zoom + ")"
       }
-    }
-    infoWrapper.appendChild(dateWrapper)
-    infoWrapper.appendChild(locationWrapper)
-    photo.appendChild(infoWrapper)
+      wrapper.style.transform = tr[photo.orientation] + scale
+      //console.log(tr[photo.orientation], wrapper.style.transform)
+      var date = document.getElementById("DBXWLP_DATE")
+      var location = document.getElementById("DBXWLP_LOCATION")
 
-    wrapper.insertBefore(photo, wrapper.firstChild)
-    var timer = setTimeout(function(){
-      while (wrapper.childNodes.length > 1) {
-        wrapper.removeChild(wrapper.lastChild)
-      }
+      date.innerHTML = (typeof photo.time !== "undefined") ? photo.time : ""
+      location.innerHTML = (typeof photo.locationText !== "undefined") ? photo.locationText : ""
     }, 2000)
   },
 
-
-  loadConfig: function(cfg) {
-    this.CurCfg = Object.assign({}, PROFILE_TEMPLATE, cfg)
-
-    if (this.CurCfg.scanIntervalSec < 60) this.CurCfg.scanIntervalSec = 60
-    if (this.CurCfg.drawIntervalSec < 10) this.CurCfg.drawIntervalSec = 10
-    if (this.CurCfg.drawIntervalSec > this.CurCfg.scanIntervalSec) {
-      this.CurCfg.drawIntervalSec = this.CurCfg.scanIntervalSec
-    }
-    if (!this.CurCfg.sort.match(/byTime|byTimeReverse|byName|byNameReverse|byRandom/gi)) {
-      this.CurCfg.sort = 'byRandom'
-    }
-    this.sendSocketNotification('INIT_CONFIG', this.CurCfg)
-  },
 })
