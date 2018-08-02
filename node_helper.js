@@ -5,7 +5,6 @@ const fs = require('fs')
 const moment = require('moment')
 const request = require('request')
 const ExifImage = require('exif').ExifImage
-const Jimp = require("jimp");
 
 
 const STORE = path.join(__dirname, 'cache')
