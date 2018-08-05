@@ -7,6 +7,7 @@ const request = require('request')
 const ExifImage = require('exif').ExifImage
 const Jimp = require("jimp");
 
+
 const STORE = path.join(__dirname, 'cache')
 
 
@@ -212,6 +213,7 @@ module.exports = NodeHelper.create({
         return
       }
     }
+
 
     this.dbx.filesDownload({"path":photo.path}).then((data) => {
       fs.writeFileSync(filePath, data.fileBinary, "binary")

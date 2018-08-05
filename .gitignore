@@ -1,0 +1,6 @@
+# Ignore downloaded node modules
+node_modules
+
+# Module specific ignores
+cache
+
