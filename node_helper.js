@@ -179,10 +179,14 @@ module.exports = NodeHelper.create({
           var geo = this.getGeoReverse(photo.location, (locString)=>{
             photo.locationText = locString
             this.sendSocketNotification("NEW_PHOTO", photo)
+            return
           })
         }
+        this.sendSocketNotification("NEW_PHOTO", photo)
+        return
       } else {
         this.sendSocketNotification("NEW_PHOTO", photo)
+        return
       }
     }
 
@@ -190,19 +194,22 @@ module.exports = NodeHelper.create({
       try {
         new ExifImage({ image : filePath }, (error, exifData) => {
           if (error) {
-            console.log("Error:", error)
+            //console.log("Warning(Ignore):", error)
             cb(photo)
+            return
           }
           photo.orientation
             = (typeof exifData.image.Orientation !== "undefined")
             ? exifData.image.Orientation
             : 1
           cb(photo)
+          return
         })
       } catch (error) {
         //console.log('Error: ' + error.message);
         console.log("catchError:", error)
         cb(photo)
+        return
       }
     }
 
