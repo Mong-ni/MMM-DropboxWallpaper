@@ -2,7 +2,7 @@
   background-repeat:no-repeat;
   background-position:center;
 
-  opacity:100%;
+  opacity:1;
   /*transition: background-image 1s ease 1s;*/
   transition: opacity 1s ease 1s;
 }
