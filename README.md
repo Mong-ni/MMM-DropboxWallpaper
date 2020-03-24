@@ -1,25 +1,14 @@
 # MMM-DropboxWallpaper
 Module for `MagicMirror` which can show images from `Dropbox`
 
-## v2.0.0 Notice
-This module is upgraded to v2.0.0. (Since Aug 2nd, 2018).
-You can find the previous version(v1.0.0) in github branch [`v1.0.0`](https://github.com/eouia/MMM-DropboxWallpaper/tree/v1.0.0)
-For updating to v2.0.0. You should;
-```shell
-cd ~/MagicMirror/modules/MMM-DropboxWallpaper
-git pull
-npm install
-```
-And configuration is changed. You should modify your `config.js`
 
-### Improvement in v2
-- Whole new created (for using Latest API(Dropbox API ^4.0) and better performance)
-- Profile deprecated (I think nobody use this feature)
-- scanInterval deprecated (After each cycle, it will rescan automatically)
-- Auto image rotation by EXIF orientation value. (But wrong orientation could give unexpected distortion of image when be rotated.)
-- auto scan for subdirectories.
-- filename filter enabled. (You can find target files with search filter like `".jpg"` or `"DSC"` or `"wedding_"`. )
-- jpg, png, gif supported. But only `jpg` can abstract EXIF info.
+## New Updates
+**`[2.0.1] - 2020/03/24`**
+- Fixed: bug of Dropbox photo taken time.
+- Changed: some minor fix for global fetcher warning.
+
+
+
 
 ## Screenshot
 ![](https://github.com/eouia/MMM-DropboxWallpaper/blob/master/sc.jpg?raw=true)
@@ -101,3 +90,25 @@ I also tried to rotate a photo file itself downloaded, but it took a very long p
 The better solution is, re-save those kinds of photos with right orientation.(Of course, do it in your powerful PC). I think most modern photo editor could do that by export menu.
 Or you can use this;
 - http://annystudio.com/software/jpeglosslessrotator/ (For Windows)
+
+
+## UPDATES HISTORY
+## v2.0.0 Notice
+This module is upgraded to v2.0.0. (Since Aug 2nd, 2018).
+You can find the previous version(v1.0.0) in github branch [`v1.0.0`](https://github.com/eouia/MMM-DropboxWallpaper/tree/v1.0.0)
+For updating to v2.0.0. You should;
+```shell
+cd ~/MagicMirror/modules/MMM-DropboxWallpaper
+git pull
+npm install
+```
+And configuration is changed. You should modify your `config.js`
+
+### Improvement in v2
+- Whole new created (for using Latest API(Dropbox API ^4.0) and better performance)
+- Profile deprecated (I think nobody use this feature)
+- scanInterval deprecated (After each cycle, it will rescan automatically)
+- Auto image rotation by EXIF orientation value. (But wrong orientation could give unexpected distortion of image when be rotated.)
+- auto scan for subdirectories.
+- filename filter enabled. (You can find target files with search filter like `".jpg"` or `"DSC"` or `"wedding_"`. )
+- jpg, png, gif supported. But only `jpg` can abstract EXIF info.

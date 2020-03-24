@@ -8,7 +8,6 @@
 
 Module.register("MMM-DropboxWallpaper",{
   defaults: {
-
     refreshInterval: 1000*60,
     search: [".jpg", ".png", ".gif"], // Or you can find target files like "FILENAME". (wildcard or regexp not supported)
     directory: "/", // root of directories to be scanned.
@@ -64,7 +63,7 @@ Module.register("MMM-DropboxWallpaper",{
     }
   },
 
-  socketNotificationReceived(noti, payload) {
+  socketNotificationReceived: function(noti, payload) {
     switch(noti) {
       case 'NEW_PHOTO':
         this.updateView(payload)

@@ -1,4 +1,4 @@
-require('isomorphic-fetch')
+const fetch = require('isomorphic-fetch')
 const Dropbox = require('dropbox').Dropbox
 const path = require('path')
 const fs = require('fs')
@@ -70,7 +70,7 @@ module.exports = NodeHelper.create({
     if (!this.config.verbose) {
 
     }
-    this.dbx = new Dropbox({accessToken: this.config.dropboxAccessToken})
+    this.dbx = new Dropbox({accessToken: this.config.dropboxAccessToken, fetch: fetch})
     console.log('[DBXWLP] Configuration is initialized.')
     this.scan(this.config.scanDirectory)
   },
@@ -136,7 +136,10 @@ module.exports = NodeHelper.create({
             endFlag = true
           }
         }
-      }, console.error)
+      //}, console.error)
+      }, (e)=>{
+        console.log(e.error.error, e)
+      })
     }
     for (var i in this.config.search) {
       var ext = this.config.search[i]
@@ -197,6 +200,10 @@ module.exports = NodeHelper.create({
             //console.log("Warning(Ignore):", error)
             cb(photo)
             return
+          }
+          if (exifData.exif && exifData.exif.CreateDate) {
+            photo.time = new moment(exifData.exif.CreateDate, "YYYY:MM:DD HH:mm:ss").format("x")
+            photo.time = new moment.unix(photo.time / 1000).format(this.config.dateTimeFormat)
           }
           photo.orientation
             = (typeof exifData.image.Orientation !== "undefined")
