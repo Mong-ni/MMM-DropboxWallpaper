@@ -3,6 +3,11 @@ Module for `MagicMirror` which can show images from `Dropbox`
 
 
 ## New Updates
+**`[2.1.0] - 2020/03/24`**
+- Fixed: bug of file deleted during playing.
+- Changed: remove dependency of `request`. (Using `axios`)
+- `git pull && npm install` be needed to update.
+
 **`[2.0.1] - 2020/03/24`**
 - Fixed: bug of Dropbox photo taken time.
 - Changed: some minor fix for global fetcher warning.

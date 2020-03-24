@@ -4,6 +4,7 @@ const path = require('path')
 const fs = require('fs')
 const moment = require('moment')
 const request = require('request')
+const axios = require('axios')
 const ExifImage = require('exif').ExifImage
 
 
@@ -131,7 +132,6 @@ module.exports = NodeHelper.create({
           fileSearch(directory, ext, result.start)
         } else {
           extCount--
-
           if (extCount <= 0) {
             endFlag = true
           }
@@ -154,15 +154,17 @@ module.exports = NodeHelper.create({
   },
 
   work: function() {
+    clearTimeout(timer)
     var timer = null
     if (this.index >= this.images.length) {
-      clearTimeout(timer)
-      this.index = 0
       console.log("[DBXWLP] Cycle finished")
+      this.index = 0
       this.scan()
     } else {
       var photo = this.images[this.index]
-      this.download(photo)
+      this.download(photo).then(()=>{
+
+      })
       this.index++
       timer = setTimeout(()=>{
         this.work()
@@ -171,119 +173,129 @@ module.exports = NodeHelper.create({
   },
 
   download: function(photo) {
-    photo.orientation = 1
-    photo.time = new moment.unix(photo.time / 1000).format(this.config.dateTimeFormat)
-    photo.locationText = ""
-    var filePath = path.join(STORE, "temp")
-
-    var getGeo = (photo) => {
-      if (this.config.tokenLocationIQ && photo.location) {
-        if (photo.location.latitude && photo.location.longitude) {
-          var geo = this.getGeoReverse(photo.location, (locString)=>{
-            photo.locationText = locString
-            this.sendSocketNotification("NEW_PHOTO", photo)
-            return
-          })
-        }
-        this.sendSocketNotification("NEW_PHOTO", photo)
-        return
-      } else {
-        this.sendSocketNotification("NEW_PHOTO", photo)
-        return
-      }
-    }
-
-    var readOri = (photo, cb) => {
-      try {
-        new ExifImage({ image : filePath }, (error, exifData) => {
-          if (error) {
-            //console.log("Warning(Ignore):", error)
-            cb(photo)
-            return
+    return new Promise((resolve)=>{
+      const getGeoReverse = (location) => {
+        return new Promise((resolve)=>{
+          try {
+            const step = async()=>{
+              var lat = location.latitude
+              var lon = location.longitude
+              var query = "http://locationiq.org/v1/reverse.php?format=json&key="
+                + this.config.tokenLocationIQ
+                + "&lat=" + lat
+                + "&lon=" + lon
+              var response = await axios(query)
+              var data = response.data
+              var loc = ""
+              var part = ""
+              var level = [
+                'water', 'road', 'hotel', , 'pedestrian', 'stadium', 'university', 'public',
+                'manor', 'memorial', 'monument', 'ruins', 'tower', 'beach_resort',
+                'garden', 'marina', 'park', 'american_football', 'baseball',
+                'golf', 'multi', 'building', 'aquarium', 'artwork', 'attraction',
+                'museum', 'theme_park', 'viewpoint', 'zoo', 'castle', 'fort',
+                'gallery'
+              ]
+              for (var l in level) {
+                var s = level[l]
+                if(typeof data.address[s] !== 'undefined') part = data.address[s]
+              }
+              loc += ((part) ? (part + ", ") : "")
+              part = ""
+              var level = [
+                'hamlet', 'isolated_dwelling', 'farm', 'allotments',
+                'plot', 'city_block', 'neighbourhood', 'quarter',
+                'suburb', 'borough', 'village', 'town', 'city'
+              ]
+              for (var l in level) {
+                var s = level[l]
+                if(typeof data.address[s] !== 'undefined') part = data.address[s]
+              }
+              loc += ((part) ? (part + ", ") : "")
+              part = ""
+              var level = [
+                'county', 'state', 'region', 'province', 'district', 'municipality'
+              ]
+              for (var l in level) {
+                var s = level[l]
+                if(typeof data.address[s] !== 'undefined') part = data.address[s]
+              }
+              loc += ((part) ? (part + ", ") : "")
+              loc += data.address.country_code.toUpperCase()
+              resolve(loc)
+            }
+            step()
+          } catch (err) {
+            console.log(err)
+            resolve(false)
           }
-          if (exifData.exif && exifData.exif.CreateDate) {
-            photo.time = new moment(exifData.exif.CreateDate, "YYYY:MM:DD HH:mm:ss").format("x")
-            photo.time = new moment.unix(photo.time / 1000).format(this.config.dateTimeFormat)
-          }
-          photo.orientation
-            = (typeof exifData.image.Orientation !== "undefined")
-            ? exifData.image.Orientation
-            : 1
-          cb(photo)
-          return
         })
-      } catch (error) {
-        //console.log('Error: ' + error.message);
-        console.log("catchError:", error)
-        cb(photo)
-        return
       }
-    }
 
+      const getGeo = (photo) => {
+        return new Promise((resolve)=>{
+          const step = async () => {
+            if (this.config.tokenLocationIQ && photo.location) {
+              if (photo.location.latitude && photo.location.longitude) {
+                var locString = await getGeoReverse(photo.location)
+                photo.locationText = locString
+                this.sendSocketNotification("NEW_PHOTO", photo)
+                resolve()
+              }
+              this.sendSocketNotification("NEW_PHOTO", photo)
+              resolve()
+            } else {
+              this.sendSocketNotification("NEW_PHOTO", photo)
+              resolve()
+            }
+          }
+          step()
+        })
+      }
 
-    this.dbx.filesDownload({"path":photo.path}).then((data) => {
-      fs.writeFileSync(filePath, data.fileBinary, "binary")
-      console.log("[DBXWLP]", photo.name, "is downloaded.")
-      readOri(photo, getGeo)
+      const exifProc = (photo, cb) => {
+        return new Promise((resolve)=>{
+          try {
+            new ExifImage({ image : filePath }, (error, exifData) => {
+              if (error) {
+                console.log("Warning(Ignorable):", error.toString())
+              }
+              if (!error && typeof exifData !== "undefined" && exifData.hasOwnProperty("exif")) {
+                if (exifData.exif && exifData.exif.CreateDate) {
+                  photo.time = new moment(exifData.exif.CreateDate, "YYYY:MM:DD HH:mm:ss").format("x")
+                  photo.time = new moment.unix(photo.time / 1000).format(this.config.dateTimeFormat)
+                }
+                photo.orientation
+                  = (typeof exifData.image.Orientation !== "undefined")
+                  ? exifData.image.Orientation
+                  : 1
+              }
+              cb(photo)
+              resolve()
+            })
+          } catch (error) {
+            //console.log('Error: ' + error.message);
+            console.log("catchError:", error)
+            cb(photo)
+            resolve()
+          }
+        })
+      }
+
+      photo.orientation = 1
+      photo.time = new moment.unix(photo.time / 1000).format(this.config.dateTimeFormat)
+      photo.locationText = ""
+      var filePath = path.join(STORE, "temp")
+
+      this.dbx.filesDownload({"path":photo.path}).then((data) => {
+        fs.writeFileSync(filePath, data.fileBinary, "binary")
+        console.log("[DBXWLP]", photo.name, "is downloaded.")
+        resolve(exifProc(photo, getGeo))
+      }).catch((err)=>{
+        resolve(false)
+      })
     })
   },
 
-  getGeoReverse: function(location, onFinished) {
-    var lat = location.latitude
-    var lon = location.longitude
-    var query = "http://locationiq.org/v1/reverse.php?format=json&key="
-      + this.config.tokenLocationIQ
-      + "&lat=" + lat
-      + "&lon=" + lon
 
-
-
-      request(query, { json: true }, (err, res, data) => {
-        if (err) {
-          console.error(err)
-          return null
-        }
-        var loc = ""
-        var part = ""
-
-        var level = [
-          'water', 'road', 'hotel', , 'pedestrian', 'stadium', 'university', 'public',
-          'manor', 'memorial', 'monument', 'ruins', 'tower', 'beach_resort',
-          'garden', 'marina', 'park', 'american_football', 'baseball',
-          'golf', 'multi', 'building', 'aquarium', 'artwork', 'attraction',
-          'museum', 'theme_park', 'viewpoint', 'zoo', 'castle', 'fort',
-          'gallery'
-        ]
-        for (var l in level) {
-          var s = level[l]
-          if(typeof data.address[s] !== 'undefined') part = data.address[s]
-        }
-        loc += ((part) ? (part + ", ") : "")
-
-        part = ""
-        var level = [
-          'hamlet', 'isolated_dwelling', 'farm', 'allotments',
-          'plot', 'city_block', 'neighbourhood', 'quarter',
-          'suburb', 'borough', 'village', 'town', 'city'
-        ]
-        for (var l in level) {
-          var s = level[l]
-          if(typeof data.address[s] !== 'undefined') part = data.address[s]
-        }
-        loc += ((part) ? (part + ", ") : "")
-
-        part = ""
-        var level = [
-          'state', 'region', 'province', 'district', 'county', 'municipality'
-        ]
-        for (var l in level) {
-          var s = level[l]
-          if(typeof data.address[s] !== 'undefined') part = data.address[s]
-        }
-        loc += ((part) ? (part + ", ") : "")
-
-        loc += data.address.country_code.toUpperCase()
-        onFinished(loc)
-      })
-  }
 })

@@ -103,7 +103,7 @@ Module.register("MMM-DropboxWallpaper",{
       wrapper.style.backgroundImage = "none"
       wrapper.className = "tr_" + photo.orientation
 
-      console.log(width, height, wrapper.offsetHeight, wrapper.offsetWidth)
+      //console.log(width, height, wrapper.offsetHeight, wrapper.offsetWidth)
 
       //wrapper.style.backgroundSize = zoom + "%"
 

@@ -1,11 +1,12 @@
 {
  "name": "mmm-dropboxwallpaper",
- "version": "2.0.1",
+ "version": "2.1.0",
  "description": "MagicMirror module for showing images from Dropbox.",
  "author": "eouia",
  "license": "MIT",
  "repository": "https://github.com/eouia/MMM-DropboxWallpaper",
  "dependencies": {
+  "axios": "^0.19.2",
   "dropbox": "^4.0.9",
   "exif": "^0.6.0",
   "isomorphic-fetch": "^2.2.1"
