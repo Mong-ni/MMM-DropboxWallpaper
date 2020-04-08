@@ -113,6 +113,15 @@ module.exports = NodeHelper.create({
               location = it.media_info.metadata.location
               time = new moment(it.media_info.metadata.time_taken).format("x")
             }
+            else {
+              // If there is no media information, time is set based on the file name.
+              // File Name Format(YYYY-MM-DD HHmmss.xxx)
+              var str = it.name 
+              str = str.slice(0,13) + ':' + str.slice(13,15) + ':' + str.slice(15,17)
+              
+              time = new moment(str, "YYYY-MM-DD HH:mm:ss").format("x")
+            }
+
             var found = {
               "name": it.name,
               "path": it.path_lower,
