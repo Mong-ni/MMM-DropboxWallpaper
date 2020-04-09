@@ -115,9 +115,9 @@ module.exports = NodeHelper.create({
             }
             else {
               // If there is no media information, time is set based on the file name.
-              // File Name Format(YYYY-MM-DD HHmmss.xxx)
+              // File Name Format(YYYYMMDD_HHmmss.xxx)
               var str = it.name 
-              str = str.slice(0,13) + ':' + str.slice(13,15) + ':' + str.slice(15,17)
+              str = str.slice(0,4) + '-' + str.slice(4,6) + '-' + str.slice(6,8) + ' ' + str.slice(9,11) + ':' + str.slice(11,13) + ':' + str.slice(13,15)
               
               time = new moment(str, "YYYY-MM-DD HH:mm:ss").format("x")
             }
