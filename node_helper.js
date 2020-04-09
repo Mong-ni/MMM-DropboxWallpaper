@@ -1,26 +1,18 @@
-var Dropbox = require('dropbox')
-var path = require('path')
-var fs = require('fs')
-var moment = require('moment')
-const {session} = require('electron')
-//var piexif = require("piexifjs");
+const fetch = require('isomorphic-fetch')
+const Dropbox = require('dropbox').Dropbox
+const path = require('path')
+const fs = require('fs')
+const moment = require('moment')
+const request = require('request')
+const axios = require('axios')
+const ExifImage = require('exif').ExifImage
+
 
 const STORE = path.join(__dirname, 'cache')
 
+
 var mySort = {
-  byName: function(a, b) {
-    if (a.name < b.name) return 1
-    if (a.name > b.name) return -1
-    return 0
-  },
-
-  byNameReverse: function(a, b) {
-    if (a.name < b.name) return -1
-    if (a.name > b.name) return 1
-    return 0
-  },
-
-  byTime: function(a, b) {
+  time90: function(a, b) {
     var atm = moment(a.time)
     var btm = moment(b.time)
 
@@ -29,7 +21,7 @@ var mySort = {
     return 0
   },
 
-  byTimeReverse: function(a, b) {
+  time09: function(a, b) {
     var atm = moment(a.time)
     var btm = moment(b.time)
 
@@ -38,198 +30,272 @@ var mySort = {
     return 0
   },
 
-  byRandom: function(a, b) {
+  nameZA: function(a, b) {
+    if (a.name < b.name) return 1
+    if (a.name > b.name) return -1
+    return 0
+  },
+
+  nameAZ: function(a, b) {
+    if (a.name < b.name) return -1
+    if (a.name > b.name) return 1
+    return 0
+  },
+
+  random: function(a, b) {
     return 0.5 - Math.random()
   }
 }
 
-var dbx
+
+
+
 var NodeHelper = require('node_helper')
 module.exports = NodeHelper.create({
   start: function() {
-    this.firstScan = 1
     this.config = {}
-    this.dbxImageList = []
-    this.scanTimer = null
-    this.photoTimer = null
-    this.imageCursor = 0
-    this.imageNextCursor = 0
-    this.isPhotoWorkerWorking = 0
+    this.images = []
+    this.index = 0
   },
 
   socketNotificationReceived: function (noti, payload) {
     switch(noti) {
-      case 'RESUME':
-        this.resumeTimer();
-        console.log('[DBXWLP] Resumed.')
-        break;
       case 'INIT_CONFIG':
-        this.startWorker(payload)
-        console.log('[DBXWLP] Configuration is initialized.')
-        break;
-      case 'SUSPEND':
-        this.suspendTimer();
-        console.log('[DBXWLP] Suspended.')
+        this.initializeAfterLoading(payload)
         break;
     }
   },
 
-  scanDropbox(aDirectories) {
-    var filterPhoto = function(e) {
-      if (e['.tag'] !== 'file') return 0
-      if (typeof e.media_info == 'undefined') return 0
-      if (typeof e.media_info.metadata == 'undefined') return 0
-      if (e.media_info.metadata['.tag'] !== 'photo') return 0
-      return 1
+  initializeAfterLoading: function(config) {
+    this.config = config
+    if (!this.config.verbose) {
+
     }
+    this.dbx = new Dropbox({accessToken: this.config.dropboxAccessToken, fetch: fetch})
+    console.log('[DBXWLP] Configuration is initialized.')
+    this.scan(this.config.scanDirectory)
+  },
 
-    if (aDirectories.length <= 0) return
-    var firstScanDirectories = 0
-    if (this.firstScan == 1) {
-      firstScanDirectories = aDirectories.length
+  scan: function(directory, continueArg={}) {
+    console.log("[DBXWLP] Starting photo scanning.")
+    var extCount = this.config.search.length;
+    var tempItems = []
+    var maxResult = 10
+    var totalCount = 0
+    var endFlag = false
+    var fileSearch = (directory, ext, start) => {
+      this.dbx.filesSearch({
+        "path": directory,
+        "query": ext,
+        "start": start,
+        "max_results": maxResult,
+        "mode": "filename"
+      }).then((result)=>{
+        var count = result.matches.length
+        totalCount += count
+        for (var j in result.matches) {
+          var item = result.matches[j]
+          count--
+          console.log("[DBXWLP] Scanning.", totalCount, count)
+          if (item.metadata['.tag'] !== 'file') {
+            totalCount--
+            continue
+          }
+          this.dbx.filesGetMetadata({
+            "path":item.metadata.path_lower,
+            "include_media_info":true,
+          }).then((it)=>{
+            var dimensions = {"width":null, "height":null}
+            var location = {"latitude":null, "longitude":null}
+            var time = new moment(it.server_modified).format("x")
+            if (typeof it.media_info !== "undefined") {
+              dimensions = it.media_info.metadata.dimensions
+              location = it.media_info.metadata.location
+              time = new moment(it.media_info.metadata.time_taken).format("x")
+            }
+            var found = {
+              "name": it.name,
+              "path": it.path_lower,
+              "id": it.id,
+              "dimensions": dimensions,
+              "location": location,
+              "time": time
+            }
+            tempItems.push(found)
+            if (totalCount == tempItems.length && endFlag) {
+              this.images = tempItems
+              this.scanned()
+            }
+          }, console.error)
+        }
+        if (result.more) {
+          fileSearch(directory, ext, result.start)
+        } else {
+          extCount--
+          if (extCount <= 0) {
+            endFlag = true
+          }
+        }
+      //}, console.error)
+      }, (e)=>{
+        console.log(e.error.error, e)
+      })
     }
-    for (var i in aDirectories) {
-      var path = aDirectories[i]
-      var FilesListFolderArg = {
-        path: path,
-        include_media_info:true,
-      }
-      console.log('[DBXWLP] SCANNING:', path)
-      var self = this
-      this.dbxImageList = []
-      var dbx = new Dropbox({ accessToken: this.config.accessToken })
-      dbx.filesListFolder(FilesListFolderArg)
-        .then(function(response) { //get All images
-            var entries = response.entries
-            if (entries.length > 0) {
-              entries = entries.filter(filterPhoto)
-              entries.forEach(function(e) {
-                var img = {}
-                img.name = e.name
-                img.path = e.path_lower
-                img.id = e.id
-                img.metadata = e.media_info.metadata
-                img.time = (e.media_info.metadata.time_taken)
-                  ? e.media_info.metadata.time_taken : e.server_modified
-                img.dimensions = (e.media_info.metadata.dimensions)
-                  ? e.media_info.metadata.dimensions : null
-                self.dbxImageList.push(img)
-              })
-            }
-            response = null
-          })
-        .then(function() { //after getting list of all images
-          if(self.dbxImageList.length > 0) {
-            self.dbxImageList.sort(mySort[self.config.sort])
-
-            var idx = self.dbxImageList.indexOf(self.imageCursor)
-            if (idx < 0) idx = 0
-            self.imageCursor = idx
-          }
-          console.log('[DBXWLP] SCANNED:', self.dbxImageList.length)
-          self.sendSocketNotification('SCANNED', self.dbxImageList.length)
-          if (self.firstScan == 1) {
-            firstScanDirectories--;
-            if (firstScanDirectories <= 0) {
-              self.firstScan = 0
-              self.downloadPhoto()
-            }
-          }
-
-        })
-        .catch(function(error) {
-          self.sendSocketNotification('SCAN_ERROR', path)
-          console.log('[DBXWLP] DOWNLOAD_ERROR', path)
-          if (this.firstScan == 1) {
-            firstScanDirectories--;
-          }
-        })
-      dbx = null
+    for (var i in this.config.search) {
+      var ext = this.config.search[i]
+      fileSearch(this.config.directory, ext, 0)
     }
   },
 
-  downloadPhoto: function() {
-    if(this.dbxImageList.length <= 0) {
-      console.log('[DBXPIC] No scanned images in Dropbox.')
-      return
-    }
+  scanned: function() {
+    console.log("[DBXWLP] All photos are found.:", this.images.length)
+    this.images.sort(mySort[this.config.sort])
+    this.work()
+  },
 
-    if (this.imageCursor >= this.dbxImageList.length) {
-      console.log('[DBXPIC] Return cursor to begining.')
-      if(this.config.sort == 'byRandom') {
-        this.dbxImageList.sort(this.byRandom)
-      }
-      this.imageCursor = 0
-    }
-
-    var img = this.dbxImageList[this.imageCursor]
-    if (typeof img.path !== 'undefined') {
-      var FilesDownloadArg = {
-        path:img.path
-      }
-      var self = this
-      var dbx = new Dropbox({ accessToken: this.config.accessToken })
-      dbx.filesDownload(FilesDownloadArg)
-        .then(function(data){
-          fs.writeFileSync(path.join(STORE, 'cached'), data.fileBinary, 'binary')
-          if (self.imageCursor < self.dbxImageList.length) {
-            self.imageCursor++
-          } else {
-            self.imageCursor = 0
-          }
-          data = null
-          self.sendSocketNotification('PHOTO_DOWNLOADED', img)
-          console.log("[DBXWLP] Photo is downloaded.", img.path)
-        })
-        .catch(function(error) {
-          self.sendSocketNotification('DOWNLOAD_ERROR', img.path)
-          console.log('[DBXWLP] DOWNLOAD_ERROR', img.path, error)
-        })
-
+  work: function() {
+    clearTimeout(timer)
+    var timer = null
+    if (this.index >= this.images.length) {
+      console.log("[DBXWLP] Cycle finished")
+      this.index = 0
+      this.scan()
     } else {
-      console.log("[DBXWLP] Nothing to prepare")
+      var photo = this.images[this.index]
+      this.download(photo).then(()=>{
+
+      })
+      this.index++
+      timer = setTimeout(()=>{
+        this.work()
+      }, this.config.refreshInterval)
     }
-    dbx = null
-    session.clearCache(function() {
-      console.log("cleared?")
+  },
+
+  download: function(photo) {
+    return new Promise((resolve)=>{
+      const getGeoReverse = (location) => {
+        return new Promise((resolve)=>{
+          try {
+            const step = async()=>{
+              var lat = location.latitude
+              var lon = location.longitude
+              var query = "http://locationiq.org/v1/reverse.php?format=json&key="
+                + this.config.tokenLocationIQ
+                + "&lat=" + lat
+                + "&lon=" + lon
+              var response = await axios(query)
+              var data = response.data
+              var loc = ""
+              var part = ""
+              var level = [
+                'water', 'road', 'hotel', , 'pedestrian', 'stadium', 'university', 'public',
+                'manor', 'memorial', 'monument', 'ruins', 'tower', 'beach_resort',
+                'garden', 'marina', 'park', 'american_football', 'baseball',
+                'golf', 'multi', 'building', 'aquarium', 'artwork', 'attraction',
+                'museum', 'theme_park', 'viewpoint', 'zoo', 'castle', 'fort',
+                'gallery'
+              ]
+              for (var l in level) {
+                var s = level[l]
+                if(typeof data.address[s] !== 'undefined') part = data.address[s]
+              }
+              loc += ((part) ? (part + ", ") : "")
+              part = ""
+              var level = [
+                'hamlet', 'isolated_dwelling', 'farm', 'allotments',
+                'plot', 'city_block', 'neighbourhood', 'quarter',
+                'suburb', 'borough', 'village', 'town', 'city'
+              ]
+              for (var l in level) {
+                var s = level[l]
+                if(typeof data.address[s] !== 'undefined') part = data.address[s]
+              }
+              loc += ((part) ? (part + ", ") : "")
+              part = ""
+              var level = [
+                'county', 'state', 'region', 'province', 'district', 'municipality'
+              ]
+              for (var l in level) {
+                var s = level[l]
+                if(typeof data.address[s] !== 'undefined') part = data.address[s]
+              }
+              loc += ((part) ? (part + ", ") : "")
+              loc += data.address.country_code.toUpperCase()
+              resolve(loc)
+            }
+            step()
+          } catch (err) {
+            console.log(err)
+            resolve(false)
+          }
+        })
+      }
+
+      const getGeo = (photo) => {
+        return new Promise((resolve)=>{
+          const step = async () => {
+            if (this.config.tokenLocationIQ && photo.location) {
+              if (photo.location.latitude && photo.location.longitude) {
+                var locString = await getGeoReverse(photo.location)
+                photo.locationText = locString
+                this.sendSocketNotification("NEW_PHOTO", photo)
+                resolve()
+              }
+              this.sendSocketNotification("NEW_PHOTO", photo)
+              resolve()
+            } else {
+              this.sendSocketNotification("NEW_PHOTO", photo)
+              resolve()
+            }
+          }
+          step()
+        })
+      }
+
+      const exifProc = (photo, cb) => {
+        return new Promise((resolve)=>{
+          try {
+            new ExifImage({ image : filePath }, (error, exifData) => {
+              if (error) {
+                console.log("Warning(Ignorable):", error.toString())
+              }
+              if (!error && typeof exifData !== "undefined" && exifData.hasOwnProperty("exif")) {
+                if (exifData.exif && exifData.exif.CreateDate) {
+                  photo.time = new moment(exifData.exif.CreateDate, "YYYY:MM:DD HH:mm:ss").format("x")
+                  photo.time = new moment.unix(photo.time / 1000).format(this.config.dateTimeFormat)
+                }
+                photo.orientation
+                  = (typeof exifData.image.Orientation !== "undefined")
+                  ? exifData.image.Orientation
+                  : 1
+              }
+              cb(photo)
+              resolve()
+            })
+          } catch (error) {
+            //console.log('Error: ' + error.message);
+            console.log("catchError:", error)
+            cb(photo)
+            resolve()
+          }
+        })
+      }
+
+      photo.orientation = 1
+      photo.time = new moment.unix(photo.time / 1000).format(this.config.dateTimeFormat)
+      photo.locationText = ""
+      var filePath = path.join(STORE, "temp")
+
+      this.dbx.filesDownload({"path":photo.path}).then((data) => {
+        fs.writeFileSync(filePath, data.fileBinary, "binary")
+        console.log("[DBXWLP]", photo.name, "is downloaded.")
+        resolve(exifProc(photo, getGeo))
+      }).catch((err)=>{
+        resolve(false)
+      })
     })
   },
 
 
-
-  startWorker: function(config) {
-    this.firstScan = 1
-    this.dbxImageList = []
-    this.imageCursor = 0
-    this.imageNextCursor = 0
-    this.isPhotoWorkerWorking = 0
-    this.config = config
-
-    this.suspendTimer()
-
-    this.scanDropbox(this.config.directories)
-
-    this.resumeTimer()
-
-    this.sendSocketNotification('INITIALIZED')
-  },
-
-  suspendTimer: function() {
-    clearInterval(this.scanTimer)
-    clearInterval(this.photoTimer)
-    this.scanTimer = null
-    this.photoTimer = null
-  },
-
-  resumeTimer: function() {
-    this.suspendTimer()
-    var self = this
-    this.scanTimer = setInterval(function(){
-      self.scanDropbox(self.config.directories)
-    }, this.config.scanIntervalSec * 1000)
-
-    this.photoTimer = setInterval(function(){
-      self.downloadPhoto()
-    }, this.config.drawIntervalSec * 1000)
-  }
 })
