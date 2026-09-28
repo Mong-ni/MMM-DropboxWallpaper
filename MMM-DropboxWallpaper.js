@@ -1,7 +1,7 @@
 /* global Module Log config Mconfig */
 /* Magic Mirror
 * Module: MMM-DropboxWallpaper
-* v3.0.0
+* v3.0.1
 *
 * By eouia
 */

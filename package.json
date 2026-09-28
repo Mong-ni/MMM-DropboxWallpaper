@@ -1,13 +1,13 @@
 {
   "name": "mmm-dropboxwallpaper",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "MagicMirror module for showing images from Dropbox.",
   "author": "eouia",
   "license": "MIT",
   "repository": "https://github.com/mong-ni/MMM-DropboxWallpaper",
   "scripts": {
-  "postinstall": "cp env.example .env",
-  "postupgrade": "cp env.example .env"
+  "postinstall": "[ -f .env ] || cp -T example.env .env",
+  "postupgrade": "[ -f .env ] || cp -T example.env .env"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
