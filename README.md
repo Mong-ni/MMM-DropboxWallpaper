@@ -3,22 +3,13 @@ Module for `MagicMirror` which can show images from `Dropbox`
 
 
 ## New Updates
+<!-- Summarize user-visible changes in the latest version here. Keep implementation details and older releases in HISTORY. -->
 ### 3.0.1 (Unreleased)
-- Fix the environment template filename used by the installation scripts (`example.env`).
-- Preserve an existing `.env` file when reinstalling. Create it from `example.env` only when missing.
-- Report an installation error if `.env` is a directory or the template cannot be copied.
+- New installations create the environment configuration automatically; reinstalling keeps your existing settings.
+- Restore compatibility with the updated HTTP client used for Dropbox authentication and image requests.
+- The supported runtime is now **Node.js 22 or later** on Linux / Raspberry Pi.
 
-### 3.0.0 (2023-11-09)
-- **FULLY REBUILT FROM SCRATCH** You need to reinstall and reconfigure.
-- Using recent Dropbox V2 API (SDK ^10.34)
-- New OAUTH authentification
-- Dynamic configuration on the fly.(by notification)
-- auto-rotation feature is deprecated.
-- Remove 3rd-party dependencies as many as possible.
-
-
-
-
+See [HISTORY](#history) for detailed changes and previous releases.
 
 ## Screenshot
 ![Not yet prepared]()
@@ -253,10 +244,15 @@ In that case, use a simpler setup. (`fillBackground: false` also be recommended)
 - Fix the environment template filename used by the installation scripts (`example.env`).
 - Preserve an existing `.env` file when reinstalling. Create it from `example.env` only when missing.
 - Report an installation error if `.env` is a directory or the template cannot be copied.
+- Update dependencies from the `master` branch and set the supported runtime baseline to Node.js 22 or later.
+- Load the ESM-only `node-fetch` 3.x with dynamic `import()` in `auth.js` and `node_helper.js`; remove the obsolete Node.js version branch in authentication.
+- Add [Testing Method](TESTING_METHOD.md) with installation and update instructions for the `Testing` branch.
 
 ### 3.0.0 (2023-11-09)
 - **FULLY REBUILT FROM SCRATCH** You need to reinstall and reconfigure.
 - Using recent Dropbox V2 API (SDK ^10.34)
 - New OAUTH authentification
 - Dynamic configuration on the fly.(by notification)
+- auto-rotation feature is deprecated.
+- Remove 3rd-party dependencies as many as possible.
 
