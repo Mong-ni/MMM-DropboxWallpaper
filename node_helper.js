@@ -1,5 +1,6 @@
 
-const fetch = require('node-fetch') // Dropbox official SDK requires node-fetch, built-in fetch is not working at this moment.
+// Load the ESM-only node-fetch v3 from this CommonJS module.
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args))
 const path = require('path')
 require('dotenv').config({ path: path.resolve(__dirname, '.env') })
 const fs = require('fs')

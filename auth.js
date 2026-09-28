@@ -2,6 +2,8 @@ require('dotenv').config()
 const app = require('express')()
 const fs = require('fs')
 const { Dropbox } = require('dropbox')
+// Load the ESM-only node-fetch v3 from this CommonJS module.
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args))
 
 const scheme = process.env.DROPBOX_AUTH_SCHEME
 const hostname = process.env.DROPBOX_AUTH_HOSTNAME
@@ -12,9 +14,8 @@ const key = process.env.DROPBOX_APP_KEY
 const authUri = `${scheme}://${hostname}:${port}`
 const redirectUri = `${scheme}://${hostname}:${port}/auth`
 
-const [ major, , ] = process.versions.node.split('.').map(Number)
 const config = {
-  fetch : (major > 18) ? require('node-fetch') : fetch, // node 20 has fetch issue with Dropbox SDK
+  fetch,
   clientId: key,
 }
 
