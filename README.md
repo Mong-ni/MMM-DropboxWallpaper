@@ -3,6 +3,11 @@ Module for `MagicMirror` which can show images from `Dropbox`
 
 
 ## New Updates
+### 3.0.1 (Unreleased)
+- Fix the environment template filename used by the installation scripts (`example.env`).
+- Preserve an existing `.env` file when reinstalling. Create it from `example.env` only when missing.
+- Report an installation error if `.env` is a directory or the template cannot be copied.
+
 ### 3.0.0 (2023-11-09)
 - **FULLY REBUILT FROM SCRATCH** You need to reinstall and reconfigure.
 - Using recent Dropbox V2 API (SDK ^10.34)
@@ -40,6 +45,8 @@ cd MMM-DropboxWallpaper
 npm install
 ```
 
+On Linux / Raspberry Pi, `npm install` creates `.env` from `example.env` if it is missing and preserves an existing `.env` file. If `.env` is a directory or copying fails, installation reports an error. Resolve the error before continuing with configuration.
+
 ## Preparation
 ### 1. Setting Dropbox App
 1. Login Dropbox App Console( https://www.dropbox.com/developers/apps).
@@ -56,7 +63,7 @@ npm install
     - `account_info.read`, `files.metadata.read`, `files.content.read`
 
 ### 2. Authentification
-1. Open the `.env` file in this module directory after installation. The `.env` file might be created automatically, but if you cannot find it, just make one by copying `example.env`.
+1. Open the `.env` file in this module directory after installation. If installation scripts were disabled and the file is missing, run `[ -f .env ] || cp -T example.env .env` from this directory to create it without overwriting an existing `.env` file.
 2. Fill the `DROPBOX_APP_KEY=` and `DROPBOX_APP_SECRET=` properties, then save.
 3. now, execute `auth.js` 
 ```sh
@@ -242,6 +249,11 @@ In that case, use a simpler setup. (`fillBackground: false` also be recommended)
 
 
 ## HISTORY
+### 3.0.1 (Unreleased)
+- Fix the environment template filename used by the installation scripts (`example.env`).
+- Preserve an existing `.env` file when reinstalling. Create it from `example.env` only when missing.
+- Report an installation error if `.env` is a directory or the template cannot be copied.
+
 ### 3.0.0 (2023-11-09)
 - **FULLY REBUILT FROM SCRATCH** You need to reinstall and reconfigure.
 - Using recent Dropbox V2 API (SDK ^10.34)
