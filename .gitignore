@@ -2,5 +2,9 @@
 node_modules
 
 # Module specific ignores
-cache
+cache/*
+!cache/placeholder.txt
 
+.env
+credentials.json
+.DS_Store
