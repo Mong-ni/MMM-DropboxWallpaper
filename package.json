@@ -10,7 +10,7 @@
   "postupgrade": "cp env.example .env"
   },
   "dependencies": {
-    "dotenv": "^18.0.3",
+    "dotenv": "^18.0.4",
     "dropbox": "^10.47.0",
     "exifr": "^7.1.3",
     "node-fetch": "^3.3.2"
